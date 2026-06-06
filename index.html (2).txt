@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Master - إتقان المفردات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+        }
+        .en-text {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .card-enter {
+            animation: fadeUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col relative">
+
+    <header class="glass-effect sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-md">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-slate-800">إتقان المفردات</h1>
+                </div>
+                <nav class="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                    <button id="nav-cards" class="nav-btn active px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-white shadow-sm text-indigo-700" onclick="switchView('cards')">
+                        <i class="fa-solid fa-layer-group ml-1"></i> البطاقات
+                    </button>
+                    <button id="nav-quiz" class="nav-btn px-4 py-2 rounded-md text-sm font-semibold transition-colors text-slate-600 hover:text-indigo-700 hover:bg-white/50" onclick="switchView('quiz')">
+                        <i class="fa-solid fa-gamepad ml-1"></i> الاختبار
+                    </button>
+                </nav>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div id="progress-container" class="pb-3 hidden">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>تقدمك في الحفظ:</span>
+                    <span id="progress-text" class="font-bold text-indigo-600">0 / 0</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2">
+                    <div id="progress-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Loading Indicator -->
+        <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-4"></i>
+            <p class="text-slate-500">جاري تحميل المفردات وتهيئتها...</p>
+        </div>
+
+        <!-- Cards View -->
+        <div id="view-cards" class="hidden">
+            <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-book-open text-indigo-500 ml-2"></i> بطاقات التعلم</h2>
+                <div class="relative w-full sm:w-72">
+                    <i class="fa-solid fa-search absolute right-3 top-3.5 text-slate-400"></i>
+                    <input type="text" id="search-input" placeholder="ابحث عن كلمة..." class="w-full pl-4 pr-10 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+            </div>
+            <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will be injected here -->
+            </div>
+        </div>
+
+        <!-- Quiz Setup View -->
+        <div id="view-quiz-setup" class="hidden max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                        <i class="fa-solid fa-list-check text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">إعداد الاختبار</h2>
+                    <p class="text-slate-500">اختر الكلمات التي ترغب في اختبار نفسك بها.</p>
+                </div>
+
+                <div class="mb-4 flex justify-between items-center border-b border-slate-100 pb-4">
+                    <h3 class="font-bold text-slate-700">قائمة الكلمات</h3>
+                    <button id="select-all-btn" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold" onclick="toggleSelectAllQuiz()">تحديد الكل</button>
+                </div>
+
+                <div id="quiz-word-selection" class="max-h-96 overflow-y-auto pr-2 space-y-2 mb-8">
+                    <!-- Checkboxes will be injected here -->
+                </div>
+
+                <button onclick="startQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-200 transition-all flex justify-center items-center gap-2 text-lg">
+                    <span>بدء الاختبار الآن</span>
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Active View -->
+        <div id="view-quiz-active" class="hidden max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 relative overflow-hidden">
+                <!-- Progress bar for quiz -->
+                <div class="absolute top-0 left-0 right-0 h-1 bg-slate-100">
+                    <div id="quiz-progress-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <div class="flex justify-between items-center mb-8 mt-2">
+                    <span id="quiz-counter" class="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">السؤال 1 / 10</span>
+                    <button onclick="exitQuiz()" class="text-slate-400 hover:text-red-500 transition-colors" title="الخروج من الاختبار">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="text-center mb-10">
+                    <p class="text-sm text-indigo-500 font-bold mb-3">ما هي الكلمة التي تعني:</p>
+                    <h3 id="quiz-question-text" class="text-2xl font-bold text-slate-800 leading-relaxed">
+                        <!-- Question injected here -->
+                    </h3>
+                </div>
+
+                <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Options injected here -->
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="quiz-feedback" class="mt-8 text-center hidden">
+                    <p id="quiz-feedback-text" class="font-bold text-lg mb-4"></p>
+                    <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="bg-slate-800 hover:bg-slate-900 text-white py-3 px-8 rounded-xl font-bold transition-colors hidden mx-auto">السؤال التالي</button>
+                    <button id="quiz-finish-btn" onclick="showQuizResults()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-8 rounded-xl font-bold transition-colors hidden mx-auto">عرض النتيجة</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Results View -->
+        <div id="view-quiz-results" class="hidden max-w-md mx-auto text-center">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                <div id="result-icon" class="text-6xl mb-6">🏆</div>
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">اكتمل الاختبار!</h2>
+                <p class="text-slate-500 mb-6">لقد أجبت على الأسئلة بنجاح.</p>
+                
+                <div class="bg-slate-50 rounded-2xl p-6 mb-8">
+                    <p class="text-sm text-slate-500 mb-1">نتيجتك النهائية</p>
+                    <p id="quiz-score-display" class="text-5xl font-bold text-indigo-600 en-text">8/10</p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="switchView('quiz')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">إعادة اختبار جديد</button>
+                    <button onclick="switchView('cards')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors">العودة للبطاقات</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State
+        window.learnedWords = new Set();
+        window.appData = {
+            db: null,
+            auth: null,
+            user: null,
+            appId: typeof __app_id !== 'undefined' ? __app_id : 'vocab-master-app'
+        };
+
+        // Contains all requested words, meanings, explanations, examples, and thematic decorations.
+        const vocabularyWords = [
+            // List 1: Heart & Body
+            { word: "cardiac muscles", ar: "عضلات القلب", enExpl: "The muscular tissue of the heart.", arExpl: "الأنسجة العضلية للقلب.", ex: "Cardiac muscles contract to pump blood.", icon: "🫀", color: "from-rose-100 to-red-50", border: "border-rose-200" },
+            { word: "chamber", ar: "حجرة / غرفة", enExpl: "An enclosed space or cavity, like in the heart.", arExpl: "مساحة مغلقة أو تجويف، كما في القلب.", ex: "The human heart has four chambers.", icon: "🧊", color: "from-blue-50 to-indigo-50", border: "border-blue-200" },
+            { word: "contract", ar: "ينقبض / يتقلص", enExpl: "To decrease in size, number, or range.", arExpl: "أن يقل في الحجم، العدد، أو النطاق.", ex: "The heart muscles contract rhythmically.", icon: "✊", color: "from-orange-50 to-amber-50", border: "border-orange-200" },
+            { word: "hollow", ar: "مجوّف / فارغ من الداخل", enExpl: "Having a hole or empty space inside.", arExpl: "يحتوي على ثقب أو مساحة فارغة من الداخل.", ex: "The heart is a hollow organ.", icon: "🕳️", color: "from-slate-100 to-gray-50", border: "border-slate-300" },
+            { word: "lean", ar: "نحيل / خالٍ من الدهون", enExpl: "Thin, especially healthily so; having no extra fat.", arExpl: "نحيف، خاصة بشكل صحي؛ لا يحتوي على دهون زائدة.", ex: "He eats lean meat to stay healthy.", icon: "🥩", color: "from-red-50 to-orange-50", border: "border-red-200" },
+            { word: "peel", ar: "يقشر", enExpl: "To remove the outer covering or skin.", arExpl: "إزالة الغطاء الخارجي أو القشرة.", ex: "Please peel the apple for me.", icon: "🍌", color: "from-yellow-100 to-lime-50", border: "border-yellow-200" },
+            { word: "pump", ar: "يضخ", enExpl: "To force liquid or gas to move.", arExpl: "إجبار سائل أو غاز على التحرك.", ex: "The heart acts as a pump for blood.", icon: "⛽", color: "from-cyan-100 to-blue-50", border: "border-cyan-200" },
+            { word: "strip", ar: "شريط / قطعة طويلة", enExpl: "A long, narrow piece of something.", arExpl: "قطعة طويلة وضيقة من شيء ما.", ex: "He tore a strip of cloth for a bandage.", icon: "🎗️", color: "from-purple-100 to-pink-50", border: "border-purple-200" },
+            { word: "tick tock", ar: "تيك توك (صوت النبض/الساعة)", enExpl: "A sound resembling a clock ticking or a steady heartbeat.", arExpl: "صوت يشبه دقات الساعة أو نبض القلب المنتظم.", ex: "The tick tock of the grandfather clock was relaxing.", icon: "⏱️", color: "from-stone-100 to-zinc-50", border: "border-stone-200" },
+            { word: "vary", ar: "يختلف / يتنوع", enExpl: "To differ in size, amount, degree, or nature.", arExpl: "الاختلاف في الحجم، الكمية، الدرجة أو الطبيعة.", ex: "Heart rates vary from person to person.", icon: "🔄", color: "from-teal-100 to-emerald-50", border: "border-teal-200" },
+            { word: "have a change of heart", ar: "يغيّر رأيه أو موقفه", enExpl: "To change one's opinion or the way one feels.", arExpl: "تغيير الرأي أو الشعور تجاه أمر ما.", ex: "He was going to quit, but he had a change of heart.", icon: "🔄❤️", color: "from-fuchsia-100 to-pink-50", border: "border-fuchsia-200" },
+            { word: "have a heart-to-heart talk", ar: "حديث صريح من القلب للقلب", enExpl: "A sincere and intimate conversation.", arExpl: "محادثة صادقة وحميمية.", ex: "We need to have a heart-to-heart talk about our future.", icon: "💬❤️", color: "from-rose-100 to-pink-100", border: "border-rose-300" },
+            { word: "take something to heart", ar: "يأخذ الأمر على محمل الجد/بحساسية", enExpl: "To take something seriously and be affected by it.", arExpl: "أخذ شيء بجدية والتأثر به.", ex: "Don't take his harsh words to heart.", icon: "📥❤️", color: "from-slate-200 to-gray-100", border: "border-slate-300" },
+            { word: "follow one’s heart", ar: "يتبع قلبه / إحساسه", enExpl: "To act according to one's feelings and desires.", arExpl: "التصرف وفقاً للمشاعر والرغبات.", ex: "Sometimes you just have to follow your heart.", icon: "🚶❤️", color: "from-sky-100 to-blue-50", border: "border-sky-200" },
+            { word: "have one’s heart set on", ar: "يصمم أو يُصر على شيء", enExpl: "To strongly desire something.", arExpl: "الرغبة بشدة في شيء ما.", ex: "She has her heart set on going to medical school.", icon: "🎯❤️", color: "from-amber-100 to-yellow-50", border: "border-amber-200" },
+
+            // List 2: Medical & Diseases
+            { word: "contagious", ar: "مُعدٍ", enExpl: "Spread from one person to another by direct or indirect contact.", arExpl: "ينتشر من شخص لآخر عن طريق الاتصال المباشر أو غير المباشر.", ex: "The flu is highly contagious.", icon: "🤧", color: "from-green-100 to-emerald-50", border: "border-green-300" },
+            { word: "outbreak", ar: "تفشي / اندلاع", enExpl: "A sudden occurrence of something unwelcome, such as disease.", arExpl: "حدوث مفاجئ لشيء غير مرغوب فيه، مثل المرض.", ex: "There was a massive outbreak of the virus.", icon: "📈", color: "from-red-100 to-orange-50", border: "border-red-300" },
+            { word: "susceptible", ar: "عُرضة لـ / حساس لـ", enExpl: "Likely to be influenced or harmed by a particular thing.", arExpl: "من المحتمل أن يتأثر أو يتضرر من شيء معين.", ex: "Older people are more susceptible to infections.", icon: "🎯", color: "from-yellow-100 to-amber-50", border: "border-yellow-300" },
+            { word: "virus", ar: "فيروس", enExpl: "An infective agent that causes disease.", arExpl: "عامل معدٍ يسبب الأمراض.", ex: "The common cold is caused by a virus.", icon: "🦠", color: "from-lime-100 to-green-50", border: "border-lime-300" },
+            { word: "vaccination", ar: "تطعيم / لقاح", enExpl: "Treatment with a vaccine to produce immunity against a disease.", arExpl: "العلاج بلقاح لإنتاج مناعة ضد مرض ما.", ex: "Vaccination programs have saved millions of lives.", icon: "💉", color: "from-cyan-100 to-blue-50", border: "border-cyan-300" },
+            { word: "strain", ar: "سلالة (فيروسية/بكتيرية)", enExpl: "A genetic variant or subtype of a microorganism.", arExpl: "متغير جيني أو نوع فرعي من كائن حي دقيق.", ex: "A new strain of the virus has been discovered.", icon: "🧬", color: "from-purple-100 to-fuchsia-50", border: "border-purple-300" },
+            { word: "unprecedented", ar: "غير مسبوق", enExpl: "Never done or known before.", arExpl: "لم يسبق فعله أو معرفته من قبل.", ex: "The scale of the pandemic was unprecedented.", icon: "🌟", color: "from-indigo-100 to-blue-50", border: "border-indigo-300" },
+            { word: "transmit", ar: "ينقل / يبث", enExpl: "Cause (something) to pass on from one place or person to another.", arExpl: "يتسبب في انتقال (شيء ما) من مكان أو شخص إلى آخر.", ex: "Mosquitoes can transmit diseases.", icon: "📡", color: "from-sky-100 to-cyan-50", border: "border-sky-300" },
+            { word: "mutation", ar: "طفرة / تحور", enExpl: "The changing of the structure of a gene.", arExpl: "تغيير في بنية الجين.", ex: "The virus underwent a rapid mutation.", icon: "🔄🧬", color: "from-violet-100 to-purple-50", border: "border-violet-300" },
+            { word: "hybrid virus", ar: "فيروس هجين", enExpl: "A virus that contains genetic material from two different viruses.", arExpl: "فيروس يحتوي على مادة وراثية من فيروسين مختلفين.", ex: "Scientists are studying the new hybrid virus.", icon: "🧪", color: "from-emerald-100 to-teal-50", border: "border-emerald-300" },
+            { word: "orthodontist", ar: "طبيب تقويم الأسنان", enExpl: "A dentist who is qualified to treat irregularities in the teeth.", arExpl: "طبيب أسنان مؤهل لعلاج عدم انتظام الأسنان.", ex: "My orthodontist tightened my braces today.", icon: "🦷", color: "from-blue-50 to-slate-50", border: "border-blue-200" },
+            { word: "pharmacist", ar: "صيدلاني", enExpl: "A person who is professionally qualified to prepare and dispense medicinal drugs.", arExpl: "شخص مؤهل مهنياً لإعداد وصرف الأدوية الطبية.", ex: "The pharmacist explained how to take the medicine.", icon: "💊", color: "from-green-50 to-emerald-50", border: "border-green-200" },
+            { word: "psychiatrist", ar: "طبيب نفسي", enExpl: "A medical practitioner specializing in the diagnosis and treatment of mental illness.", arExpl: "ممارس طبي متخصص في تشخيص وعلاج الأمراض العقلية.", ex: "He consulted a psychiatrist for his anxiety.", icon: "🧠", color: "from-indigo-50 to-violet-50", border: "border-indigo-200" },
+            { word: "pediatrician", ar: "طبيب أطفال", enExpl: "A medical practitioner specializing in children and their diseases.", arExpl: "ممارس طبي متخصص في الأطفال وأمراضهم.", ex: "The pediatrician checked the baby's health.", icon: "👶", color: "from-cyan-50 to-sky-50", border: "border-cyan-200" },
+            { word: "therapist", ar: "معالج", enExpl: "A person skilled in a particular kind of therapy.", arExpl: "شخص ماهر في نوع معين من العلاج.", ex: "She sees a physical therapist for her back pain.", icon: "🛋️", color: "from-orange-50 to-amber-50", border: "border-orange-200" },
+            { word: "ophthalmologist", ar: "طبيب عيون", enExpl: "A specialist in the branch of medicine concerned with the study and treatment of disorders and diseases of the eye.", arExpl: "متخصص في فرع الطب المعني بدراسة وعلاج اضطرابات وأمراض العين.", ex: "The ophthalmologist prescribed new glasses.", icon: "👁️", color: "from-sky-50 to-blue-50", border: "border-sky-200" },
+            { word: "anesthesiologist", ar: "طبيب تخدير", enExpl: "A physician specialized in perioperative care, developing anesthetic plans.", arExpl: "طبيب متخصص في الرعاية المحيطة بالجراحة، ويضع خطط التخدير.", ex: "The anesthesiologist prepared the patient for surgery.", icon: "😴", color: "from-slate-100 to-gray-100", border: "border-slate-300" },
+            { word: "dermatologist", ar: "طبيب أمراض جلدية", enExpl: "A medical practitioner qualified to diagnose and treat skin disorders.", arExpl: "ممارس طبي مؤهل لتشخيص وعلاج اضطرابات الجلد.", ex: "The dermatologist recommended a special cream.", icon: "🧴", color: "from-rose-50 to-pink-50", border: "border-rose-200" },
+            { word: "geriatrician", ar: "طبيب أمراض الشيخوخة", enExpl: "An expert in the branch of medicine or social science dealing with the health and care of old people.", arExpl: "خبير في فرع الطب المتعلق بصحة ورعاية كبار السن.", ex: "My grandfather visits a geriatrician regularly.", icon: "👴", color: "from-stone-100 to-zinc-100", border: "border-stone-300" },
+            { word: "neurologist", ar: "طبيب أعصاب", enExpl: "A specialist in the anatomy, functions, and organic disorders of nerves and the nervous system.", arExpl: "متخصص في التشريح، الوظائف، والاضطرابات العضوية للأعصاب والجهاز العصبي.", ex: "The neurologist tested her reflexes.", icon: "⚡", color: "from-yellow-50 to-amber-50", border: "border-yellow-200" },
+            { word: "osteopath", ar: "طبيب عظام / معالج بتقويم العظام", enExpl: "A person who treats physical disorders using massage and manipulation of bones.", arExpl: "شخص يعالج الاضطرابات الجسدية باستخدام تدليك وتقويم العظام.", ex: "The osteopath manipulated my spine to relieve the pain.", icon: "🦴", color: "from-slate-50 to-gray-50", border: "border-slate-200" },
+
+            // List 3: Remedies & Treatments
+            { word: "adventure-prone", ar: "معرض للمغامرات / محب للمخاطر", enExpl: "Likely to engage in exciting and dangerous activities.", arExpl: "من المرجح أن ينخرط في أنشطة مثيرة وخطيرة.", ex: "The adventure-prone teenager loved rock climbing.", icon: "🧗", color: "from-orange-100 to-red-50", border: "border-orange-300" },
+            { word: "bruises", ar: "كدمات", enExpl: "Injuries appearing as areas of discolored skin.", arExpl: "إصابات تظهر كمناطق من الجلد المتغير لونه.", ex: "He had bruises on his legs after falling.", icon: "🩹", color: "from-purple-100 to-indigo-50", border: "border-purple-300" },
+            { word: "soothing", ar: "مهدئ / ملطف", enExpl: "Having a gently calming effect.", arExpl: "له تأثير مهدئ لطيف.", ex: "She listened to soothing music.", icon: "🍃", color: "from-emerald-100 to-teal-50", border: "border-emerald-300" },
+            { word: "mixture", ar: "خليط / مزيج", enExpl: "A substance made by mixing other substances together.", arExpl: "مادة مصنوعة عن طريق خلط مواد أخرى معاً.", ex: "The medicine is a mixture of herbs and honey.", icon: "🥣", color: "from-yellow-100 to-orange-50", border: "border-yellow-300" },
+            { word: "remedy", ar: "علاج / دواء شافٍ", enExpl: "A medicine or treatment for a disease or injury.", arExpl: "دواء أو علاج لمرض أو إصابة.", ex: "Lemon and honey is a good remedy for a sore throat.", icon: "🌿", color: "from-lime-100 to-green-50", border: "border-lime-300" },
+            { word: "effectiveness", ar: "فعالية", enExpl: "The degree to which something is successful in producing a desired result.", arExpl: "الدرجة التي ينجح فيها شيء ما في إنتاج النتيجة المرجوة.", ex: "They are testing the effectiveness of the new drug.", icon: "✅", color: "from-cyan-100 to-blue-50", border: "border-cyan-300" },
+            { word: "allergic reaction", ar: "رد فعل تحسسي", enExpl: "A physical response to an allergen, like sneezing or a rash.", arExpl: "استجابة جسدية لمسببات الحساسية، مثل العطس أو الطفح الجلدي.", ex: "Peanuts give him a severe allergic reaction.", icon: "🚫", color: "from-red-100 to-rose-50", border: "border-red-300" },
+            { word: "treatment", ar: "علاج / معاملة", enExpl: "Medical care given to a patient for an illness or injury.", arExpl: "الرعاية الطبية المقدمة للمريض بسبب مرض أو إصابة.", ex: "She is receiving treatment for her illness.", icon: "⚕️", color: "from-blue-100 to-indigo-50", border: "border-blue-300" },
+            { word: "relieve", ar: "يخفف / يسكّن", enExpl: "Cause pain or distress to become less severe.", arExpl: "يتسبب في جعل الألم أو الضيق أقل حدة.", ex: "Take this pill to relieve the headache.", icon: "😌", color: "from-teal-100 to-cyan-50", border: "border-teal-300" },
+            { word: "treat", ar: "يعالج / يتعامل مع", enExpl: "Give medical care or attention to.", arExpl: "إعطاء الرعاية الطبية أو الاهتمام بـ.", ex: "Doctors treat patients in hospitals.", icon: "🩺", color: "from-sky-100 to-blue-50", border: "border-sky-300" },
+            { word: "symptoms", ar: "أعراض", enExpl: "Physical or mental features which indicate a condition of disease.", arExpl: "سمات جسدية أو عقلية تشير إلى حالة مرضية.", ex: "Common symptoms include fever and cough.", icon: "🤒", color: "from-amber-100 to-yellow-50", border: "border-amber-300" },
+            { word: "natural", ar: "طبيعي", enExpl: "Existing in or caused by nature; not made by humankind.", arExpl: "موجود في الطبيعة أو ناجم عنها؛ ليس من صنع البشر.", ex: "Aloe vera is a natural remedy for burns.", icon: "🌱", color: "from-green-100 to-lime-50", border: "border-green-300" },
+            { word: "alternative", ar: "بديل", enExpl: "Available as another possibility.", arExpl: "متاح كاحتمال آخر.", ex: "Acupuncture is an alternative to traditional medicine.", icon: "🔀", color: "from-fuchsia-100 to-purple-50", border: "border-fuchsia-300" },
+            { word: "side effects", ar: "آثار جانبية", enExpl: "A secondary, typically undesirable effect of a drug or medical treatment.", arExpl: "تأثير ثانوي وغير مرغوب فيه عادة لدواء أو علاج طبي.", ex: "Drowsiness is one of the side effects of this medication.", icon: "⚠️", color: "from-orange-100 to-red-50", border: "border-orange-300" }
+        ];
+
+        // Ensure exactly 50 words as mapped (effectiveness is listed twice in prompt, used once here to keep uniqueness).
+
+        async function initializeAppWithFirebase() {
+            try {
+                // Read config if provided by environment, otherwise use a mock object to fail gracefully to offline mode
+                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+                if (!firebaseConfigStr) {
+                    console.log("No Firebase config found. Running in offline/memory mode.");
+                    initAppUI();
+                    return;
+                }
+
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+                const app = initializeApp(firebaseConfig);
+                appData.db = getFirestore(app);
+                appData.auth = getAuth(app);
+
+                // Authenticate
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(appData.auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(appData.auth);
+                }
+                
+                appData.user = appData.auth.currentUser;
+                await loadUserProgress();
+                
+            } catch (error) {
+                console.error("Firebase init error:", error);
+                // Fallback to offline mode
+            }
+            initAppUI();
+        }
+
+        async function loadUserProgress() {
+            if (!appData.user || !appData.db) return;
+            try {
+                const docRef = doc(appData.db, 'artifacts', appData.appId, 'users', appData.user.uid, 'vocabulary', 'progress');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.learned && Array.isArray(data.learned)) {
+                        window.learnedWords = new Set(data.learned);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading progress", e);
+            }
+        }
+
+        async function saveUserProgress() {
+            updateProgressUI();
+            if (!appData.user || !appData.db) return;
+            try {
+                const docRef = doc(appData.db, 'artifacts', appData.appId, 'users', appData.user.uid, 'vocabulary', 'progress');
+                await setDoc(docRef, { learned: Array.from(window.learnedWords) }, { merge: true });
+            } catch (e) {
+                console.error("Error saving progress", e);
+            }
+        }
+
+        function initAppUI() {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            renderCards();
+            renderQuizSetup();
+            updateProgressUI();
+            switchView('cards');
+
+            // Setup Search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                renderCards(e.target.value.toLowerCase());
+            });
+        }
+
+        window.toggleWordLearned = function(wordKey, checkboxId) {
+            const checkbox = document.getElementById(checkboxId);
+            if (checkbox.checked) {
+                window.learnedWords.add(wordKey);
+            } else {
+                window.learnedWords.delete(wordKey);
+            }
+            saveUserProgress();
+        };
+
+        function updateProgressUI() {
+            const total = vocabularyWords.length;
+            const learned = window.learnedWords.size;
+            const percentage = Math.round((learned / total) * 100) || 0;
+            
+            document.getElementById('progress-text').innerText = `${learned} / ${total} (${percentage}%)`;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        function renderCards(filterText = '') {
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = '';
+
+            vocabularyWords.forEach((item, index) => {
+                // Filter logic
+                if (filterText && !item.word.toLowerCase().includes(filterText) && !item.ar.includes(filterText)) {
+                    return;
+                }
+
+                const isLearned = window.learnedWords.has(item.word);
+                const delay = (index % 10) * 0.05; // Staggered animation
+
+                const cardHTML = `
+                    <div class="card-enter bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border ${item.border} overflow-hidden flex flex-col h-full relative" style="animation-delay: ${delay}s">
+                        <!-- Card Header / Theme Decor -->
+                        <div class="h-16 bg-gradient-to-r ${item.color} flex justify-between items-center px-4">
+                            <span class="text-3xl">${item.icon}</span>
+                            <button onclick="playTTS('${item.word.replace(/'/g, "\\'")}')" class="w-10 h-10 rounded-full bg-white/70 hover:bg-white text-indigo-600 flex items-center justify-center transition-colors shadow-sm" title="استمع للنطق">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="p-5 flex-grow flex flex-col">
+                            <h3 class="text-xl font-bold text-slate-800 en-text mb-1">${item.word}</h3>
+                            <p class="text-lg font-bold text-indigo-600 mb-3">${item.ar}</p>
+                            
+                            <div class="bg-slate-50 rounded-xl p-3 mb-4 text-sm border border-slate-100 flex-grow">
+                                <p class="en-text text-slate-700 font-semibold mb-1">${item.enExpl}</p>
+                                <p class="text-slate-500 mb-3">${item.arExpl}</p>
+                                <div class="border-t border-slate-200 pt-2 mt-2">
+                                    <span class="text-xs font-bold text-slate-400 block mb-1">مثال (Example):</span>
+                                    <p class="en-text text-slate-600 italic text-sm">"${item.ex}"</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer: Mark as done -->
+                        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <div class="relative flex items-center justify-center w-6 h-6 border-2 border-indigo-400 rounded-md bg-white group-hover:border-indigo-600 transition-colors">
+                                    <input type="checkbox" id="check-${index}" class="peer opacity-0 absolute w-full h-full cursor-pointer" ${isLearned ? 'checked' : ''} onchange="toggleWordLearned('${item.word.replace(/'/g, "\\'")}', 'check-${index}')">
+                                    <i class="fa-solid fa-check text-white text-sm opacity-0 peer-checked:opacity-100 bg-indigo-500 w-full h-full flex items-center justify-center rounded-[4px] transition-opacity"></i>
+                                </div>
+                                <span class="text-sm font-semibold text-slate-600 group-hover:text-indigo-700 select-none">لقد حفظتها</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        window.playTTS = function(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85; // Slightly slower for clearer learning
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Text-to-Speech not supported in this browser.");
+            }
+        };
+
+        let quizWords = [];
+        let currentQuestionIndex = 0;
+        let quizScore = 0;
+        let quizQuestions = [];
+
+        function renderQuizSetup() {
+            const container = document.getElementById('quiz-word-selection');
+            container.innerHTML = '';
+            
+            vocabularyWords.forEach((item, index) => {
+                const html = `
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors bg-white">
+                        <input type="checkbox" class="quiz-word-checkbox w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500" value="${item.word}">
+                        <div class="flex-grow flex justify-between items-center">
+                            <span class="en-text font-semibold text-slate-700">${item.word}</span>
+                            <span class="text-sm text-slate-500">${item.ar} ${item.icon}</span>
+                        </div>
+                    </label>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        window.toggleSelectAllQuiz = function() {
+            const checkboxes = document.querySelectorAll('.quiz-word-checkbox');
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            
+            checkboxes.forEach(c => c.checked = !allChecked);
+            document.getElementById('select-all-btn').innerText = allChecked ? 'تحديد الكل' : 'إلغاء التحديد';
+        };
+
+        window.startQuiz = function() {
+            const checkboxes = document.querySelectorAll('.quiz-word-checkbox:checked');
+            quizWords = Array.from(checkboxes).map(c => vocabularyWords.find(w => w.word === c.value));
+            
+            if (quizWords.length < 4) {
+                alert("يرجى اختيار 4 كلمات على الأقل لبدء الاختبار التفاعلي بشكل سليم.");
+                // We show an alert-replacement styled custom modal ideally, but prompt says "NEVER use alert()".
+                // I will use a custom in-DOM message instead of alert. Wait, prompt strongly said "Never use alert()". 
+                // Creating a custom modal function:
+                showCustomModal("يرجى اختيار 4 كلمات على الأقل لبدء الاختبار بشكل سليم.");
+                return;
+            }
+
+            // Generate questions
+            quizQuestions = [];
+            currentQuestionIndex = 0;
+            quizScore = 0;
+
+            // Shuffle selected words to create questions
+            const shuffledWords = [...quizWords].sort(() => 0.5 - Math.random());
+            // Limit to 10 questions or less
+            const numQuestions = Math.min(10, shuffledWords.length);
+
+            for (let i = 0; i < numQuestions; i++) {
+                const targetWord = shuffledWords[i];
+                // Get 3 random WRONG options from the selected pool
+                let options = quizWords.filter(w => w.word !== targetWord.word);
+                options = options.sort(() => 0.5 - Math.random()).slice(0, 3);
+                options.push(targetWord);
+                options = options.sort(() => 0.5 - Math.random()); // shuffle options
+
+                quizQuestions.push({
+                    target: targetWord,
+                    options: options,
+                    type: Math.random() > 0.5 ? 'ar_to_en' : 'en_expl_to_en' // Mix of question types
+                });
+            }
+
+            switchView('quiz-active');
+            renderQuizQuestion();
+        };
+
+        function renderQuizQuestion() {
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+            document.getElementById('quiz-finish-btn').classList.add('hidden');
+            
+            const q = quizQuestions[currentQuestionIndex];
+            
+            // Update Progress
+            document.getElementById('quiz-counter').innerText = `السؤال ${currentQuestionIndex + 1} من ${quizQuestions.length}`;
+            const progressPct = ((currentQuestionIndex) / quizQuestions.length) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
+
+            // Set Question Text
+            const questionEl = document.getElementById('quiz-question-text');
+            if (q.type === 'ar_to_en') {
+                questionEl.innerText = `"${q.target.ar}"`;
+                questionEl.classList.remove('en-text');
+            } else {
+                questionEl.innerText = `"${q.target.enExpl}"`;
+                questionEl.classList.add('en-text');
+            }
+
+            // Render Options
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option-btn bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-300 text-slate-700 font-bold py-4 px-6 rounded-xl text-lg transition-all text-center en-text';
+                btn.innerText = opt.word;
+                btn.onclick = () => handleAnswer(opt.word, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedWord, buttonEl) {
+            // Disable all buttons
+            const buttons = document.querySelectorAll('.quiz-option-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-indigo-50', 'hover:border-indigo-300', 'cursor-pointer');
+            });
+
+            const q = quizQuestions[currentQuestionIndex];
+            const isCorrect = selectedWord === q.target.word;
+            
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const feedbackText = document.getElementById('quiz-feedback-text');
+            feedbackBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                buttonEl.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                buttonEl.classList.remove('bg-slate-50', 'border-slate-200');
+                feedbackText.innerHTML = '<i class="fa-solid fa-check-circle text-green-500"></i> إجابة صحيحة!';
+                quizScore++;
+                playTTS(q.target.word); // Play sound on correct answer
+            } else {
+                buttonEl.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+                buttonEl.classList.remove('bg-slate-50', 'border-slate-200');
+                
+                // Highlight correct answer
+                buttons.forEach(btn => {
+                    if (btn.innerText === q.target.word) {
+                        btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                        btn.classList.remove('bg-slate-50', 'border-slate-200');
+                    }
+                });
+                feedbackText.innerHTML = `<i class="fa-solid fa-times-circle text-red-500"></i> إجابة خاطئة. الصحيح هو: <b>${q.target.word}</b>`;
+            }
+
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                document.getElementById('quiz-next-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('quiz-finish-btn').classList.remove('hidden');
+            }
+        }
+
+        window.nextQuizQuestion = function() {
+            currentQuestionIndex++;
+            renderQuizQuestion();
+        };
+
+        window.showQuizResults = function() {
+            switchView('quiz-results');
+            document.getElementById('quiz-score-display').innerText = `${quizScore} / ${quizQuestions.length}`;
+            
+            const icon = document.getElementById('result-icon');
+            const percentage = quizScore / quizQuestions.length;
+            if (percentage === 1) icon.innerText = '🌟🏆🌟';
+            else if (percentage >= 0.7) icon.innerText = '👏✨';
+            else icon.innerText = '💪📚';
+        };
+
+        window.exitQuiz = function() {
+            switchView('quiz');
+        };
+
+        window.switchView = function(viewName) {
+            // Hide all views
+            document.getElementById('view-cards').classList.add('hidden');
+            document.getElementById('view-quiz-setup').classList.add('hidden');
+            document.getElementById('view-quiz-active').classList.add('hidden');
+            document.getElementById('view-quiz-results').classList.add('hidden');
+
+            // Reset Nav styling
+            document.getElementById('nav-cards').className = 'nav-btn px-4 py-2 rounded-md text-sm font-semibold transition-colors text-slate-600 hover:text-indigo-700 hover:bg-white/50';
+            document.getElementById('nav-quiz').className = 'nav-btn px-4 py-2 rounded-md text-sm font-semibold transition-colors text-slate-600 hover:text-indigo-700 hover:bg-white/50';
+
+            if (viewName === 'cards') {
+                document.getElementById('view-cards').classList.remove('hidden');
+                document.getElementById('nav-cards').className = 'nav-btn active px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-white shadow-sm text-indigo-700';
+            } else if (viewName === 'quiz' || viewName === 'quiz-setup') {
+                document.getElementById('view-quiz-setup').classList.remove('hidden');
+                document.getElementById('nav-quiz').className = 'nav-btn active px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-white shadow-sm text-indigo-700';
+            } else if (viewName === 'quiz-active') {
+                document.getElementById('view-quiz-active').classList.remove('hidden');
+                document.getElementById('nav-quiz').className = 'nav-btn active px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-white shadow-sm text-indigo-700';
+            } else if (viewName === 'quiz-results') {
+                document.getElementById('view-quiz-results').classList.remove('hidden');
+                document.getElementById('nav-quiz').className = 'nav-btn active px-4 py-2 rounded-md text-sm font-semibold transition-colors bg-white shadow-sm text-indigo-700';
+            }
+        };
+
+        function showCustomModal(message) {
+            const modalHtml = `
+                <div id="custom-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center transform transition-all scale-100">
+                        <div class="text-amber-500 text-4xl mb-4"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-2">تنبيه</h3>
+                        <p class="text-slate-600 mb-6">${message}</p>
+                        <button onclick="document.getElementById('custom-modal').remove()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors">حسناً، فهمت</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Start initialization
+        window.addEventListener('DOMContentLoaded', initializeAppWithFirebase);
+
+    </script>
+</body>
+</html>
