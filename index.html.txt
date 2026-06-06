@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شرح درس: ترتيب العمليات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            overflow: hidden;
+            background: var(--light);
+            color: #334155;
+        }
+
+        /* خلفيات الشرائح */
+        .bg-slide-0 { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
+        .bg-slide-1 { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); }
+        .bg-slide-2 { background: linear-gradient(135deg, #fef08a 0%, #fde047 100%); }
+        .bg-slide-3 { background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); }
+        .bg-slide-4 { background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); }
+        .bg-slide-5 { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
+        .bg-slide-6 { background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%); }
+
+        .slide {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .slide-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            border-radius: 2rem;
+            padding: 3rem;
+            width: 90%;
+            max-width: 850px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-sizing: border-box;
+        }
+
+        /* تنسيقات النصوص المخصصة */
+        h1 { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; color: var(--dark); margin: 10px 0 20px 0; line-height: 1.2; }
+        h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--dark); margin: 0 0 20px 0; }
+        p { font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.8; margin-bottom: 20px; }
+        
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: #f0fdf4;
+            color: #166534;
+            padding: 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .warning-box {
+            background: #fef2f2;
+            border: 2px solid #fca5a5;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        /* تنسيق القوائم */
+        ul.custom-list {
+            text-align: right;
+            list-style: none;
+            padding: 0;
+            font-size: 1.3rem;
+            line-height: 1.8;
+        }
+        ul.custom-list li {
+            position: relative;
+            padding-right: 35px;
+            margin-bottom: 15px;
+        }
+        ul.custom-list li::before {
+            content: '✓';
+            position: absolute;
+            right: 0;
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        ul.warning-list li::before {
+            content: '❌';
+            color: var(--danger);
+        }
+
+        /* الأيقونات */
+        .icon-container svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        /* شريط التنقل السفلي */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 50;
+            background: linear-gradient(to top, rgba(255,255,255,0.9), transparent);
+        }
+
+        .nav-btn {
+            background: var(--dark);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            background: #0f172a;
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #94a3b8;
+        }
+        .nav-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* نقاط التنقل */
+        .dots-container {
+            display: flex;
+            gap: 12px;
+            direction: ltr; /* لتصحيح ترتيب النقاط */
+        }
+        .dot {
+            width: 14px;
+            height: 14px;
+            background: #cbd5e1;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dot.active {
+            background: var(--dark);
+            transform: scale(1.5);
+            width: 30px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+
+        <!-- الشريحة 1 -->
+        <div class="slide active bg-slide-0" id="slide-0">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #3b82f6;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="16" y1="10" x2="16" y2="10.01"></line><line x1="16" y1="18" x2="16" y2="18.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="12" y1="10" x2="12" y2="10.01"></line><line x1="12" y1="18" x2="12" y2="18.01"></line><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="8" y1="10" x2="8" y2="10.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line></svg>
+                </div>
+                <div class="badge">الصف الخامس - الوحدة 3</div>
+                <h1>ترتيب العمليات الحسابية</h1>
+                <p>رحلة مبسطة لمعرفة كيف نحل المسائل الرياضية بدون أي خطأ!</p>
+            </div>
+        </div>
+
+        <!-- الشريحة 2 -->
+        <div class="slide bg-slide-1" id="slide-1">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #10b981;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                </div>
+                <h2>هدفنا اليوم 🎯</h2>
+                <div class="highlight-box">
+                    أن نتعلم كيف نجد القيمة الصحيحة للأرقام في أي مسألة، باستخدام القواعد الصحيحة لترتيب العمليات (الجمع، الطرح، الضرب، القسمة).
+                </div>
+            </div>
+        </div>
+
+        <!-- الشريحة 3 -->
+        <div class="slide bg-slide-2" id="slide-2">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #eab308;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
+                </div>
+                <h2>لماذا الترتيب مهم؟ 🤔</h2>
+                <p style="text-align: right;">تخيل أن أمامك مسألة فيها جمع وضرب معاً.. بأيهما نبدأ؟ <br>سنتعلم اليوم "قواعد المرور" للأرقام! إذا اتبعنا القواعد، سنصل للإجابة الصحيحة دائماً.</p>
+                <div style="background: #fef9c3; padding: 15px; border-radius: 10px; border-right: 5px solid #eab308; text-align: right; font-weight: bold;">
+                    الكلمة السرية للدرس: <span style="font-size: 1.4rem; color: #a16207;">"ترتيب العمليات"</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- الشريحة 4 -->
+        <div class="slide bg-slide-3" id="slide-3">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #a855f7;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                </div>
+                <h2>وقت الاستكشاف 🔍</h2>
+                <ul class="custom-list">
+                    <li>سنحل معاً مسألة من حياتنا اليومية (مثل حساب تكلفة شراء أشياء).</li>
+                    <li>سنسأل أنفسنا: ماذا سيحدث لو بدأنا بالجمع قبل الضرب؟ هل تتغير النتيجة؟</li>
+                    <li>سنتعاون في مجموعات صغيرة لاكتشاف الحل!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- الشريحة 5 -->
+        <div class="slide bg-slide-4" id="slide-4">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #f97316;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </div>
+                <h2>دورك الآن! (التدريب الذاتي) 💻</h2>
+                <p style="text-align: right;">سنفتح <strong>منصة ألف (Alef)</strong> لنبدأ بالحل بأنفسنا:</p>
+                <ul class="custom-list">
+                    <li>اكتب خطوات حلك بوضوح، خطوة بخطوة.</li>
+                    <li>المعلم سيتابعك ويساعدك فوراً إذا احتجت.</li>
+                    <li>شارك إجابة واحدة على الأقل في الدردشة مع زملائك!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- الشريحة 6 -->
+        <div class="slide bg-slide-5" id="slide-5">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #ef4444;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
+                <h2 style="color: var(--danger);">أخطاء احذر منها! ⚠️</h2>
+                <p style="font-weight: bold; text-align: right;">أشياء يقع فيها الكثيرون، دعونا نتجنبها:</p>
+                <ul class="custom-list warning-list">
+                    <li>أن تبدأ بالجمع والطرح <strong>قبل</strong> الضرب والقسمة!</li>
+                    <li>أن تنسى <strong>الأقواس ( )</strong>.. الأقواس تُحسب أولاً دائماً!</li>
+                    <li>أن تضيع الأرقام وتنسى كتابتها أثناء حلك خطوة بخطوة (كن منظماً).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- الشريحة 7 -->
+        <div class="slide bg-slide-6" id="slide-6">
+            <div class="slide-content">
+                <div class="icon-container" style="color: #14b8a6;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                </div>
+                <h2>النهاية وتذكرة الخروج 🏁</h2>
+                <div class="highlight-box" style="background: #f0fdfa; color: #0f766e; text-align: right;">
+                    <div style="font-size: 1.5rem; font-weight: 900; margin-bottom: 10px;">الخلاصة:</div>
+                    الترتيب الصحيح للعمليات = الوصول لنتيجة صحيحة دائماً.
+                </div>
+                <p style="margin-top: 20px;">الآن، سنحل <strong>تذكرة الخروج</strong> السريعة لنرى من فهم الدرس جيداً!</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- أزرار التنقل -->
+    <div class="nav-bar">
+        <!-- زر السابق (لليمين لأننا بالعربية) -->
+        <button id="prev-btn" class="nav-btn" aria-label="السابق">
+            <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+
+        <div id="dots-container" class="dots-container"></div>
+
+        <!-- زر التالي (لليسار) -->
+        <button id="next-btn" class="nav-btn" aria-label="التالي" style="background: var(--primary);">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const dotsContainer = document.getElementById('dots-container');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        // إنشاء النقاط
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            dot.addEventListener('click', () => goToSlide(i));
+            dotsContainer.appendChild(dot);
+        }
+        const dots = document.querySelectorAll('.dot');
+
+        function updateUI() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            dots.forEach((dot, index) => {
+                if (index === currentSlide) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        function goToSlide(index) {
+            if (index >= 0 && index < totalSlides) {
+                currentSlide = index;
+                updateUI();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) goToSlide(currentSlide - 1);
+        }
+
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        // دعم الكيبورد
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') nextSlide(); 
+            else if (e.key === 'ArrowRight') prevSlide(); 
+        });
+
+        // دعم اللمس (السحب بالشاشة)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchEndX < touchStartX - 50) nextSlide(); // سحب لليسار
+            if (touchEndX > touchStartX + 50) prevSlide(); // سحب لليمين
+        }, { passive: true });
+
+        updateUI();
+    </script>
+</body>
+</html>
+```
